@@ -279,3 +279,20 @@ button { font: inherit; }
     min-height: 360px;
   }
 }
+
+.ocean-wrap{width:min(100%,760px);margin:15px auto}
+.ocean-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ocean-head>b{font-size:11px;letter-spacing:.12em;color:var(--muted)}
+.ocean-head i{font-style:normal;color:var(--accent);font-size:18px;margin-left:5px}
+.ocean-title h1{margin:0;font-size:clamp(30px,8vw,48px);line-height:.95}
+.ocean-board{position:relative;aspect-ratio:9/13;border:1px solid rgba(82,224,255,.28);border-radius:26px;overflow:hidden;background:#021b2a}
+#oceanCanvas{width:100%;height:100%;display:block}
+.controls{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin-top:14px}
+.control-button{min-height:66px;border:1px solid rgba(91,226,255,.32);border-radius:22px;background:linear-gradient(180deg,#0d5e7a,#032b3d);color:#e9fbff;font-size:27px;font-weight:900;touch-action:none}
+.control-button.pressed{transform:scale(.96);background:#147fa0}
+.controls span{font-size:8px;letter-spacing:.17em;color:var(--muted);font-weight:800}
+.game-tip{text-align:center;color:var(--muted);font-size:12px;line-height:1.4}
+.over{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;background:rgba(1,12,20,.76);backdrop-filter:blur(7px)}
+.over.is-hidden{display:none}
+.over>div{font-size:52px}.over h2{margin:5px 0;font-size:30px}.over p{color:var(--muted)}
+@media(min-width:650px){.ocean-board{aspect-ratio:16/10}}
