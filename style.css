@@ -418,3 +418,5 @@ button { font: inherit; }
   20%{opacity:1;transform:translate(-50%,0) scale(1.1)}
   100%{opacity:0;transform:translate(-50%,-38px) scale(1)}
 }
+
+.scene-img{z-index:0}.route-layer{z-index:4}.diver-sprite{z-index:10;}

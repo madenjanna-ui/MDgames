@@ -32,7 +32,8 @@ window.addEventListener("load", () => {
 
 
 
-/* ===== Тайны океана v6 — точная логика водолазов и клада ===== */
+
+/* ===== Тайны океана v7 — видимое движение водолаза ===== */
 
 const diverSprite=document.getElementById("diverSprite");
 const dangerLayer=document.getElementById("dangerLayer");
@@ -84,7 +85,9 @@ function startOceanGame(){
   game={
     running:true,
     phase:"down",
-    point:0,
+    segment:0,
+    progress:0,
+    bottomPoint:2,
     dodge:0,
     score:0,
     divers:3,
@@ -92,10 +95,9 @@ function startOceanGame(){
     t:0,
     last:performance.now(),
     carrying:false,
-    bagRewarded:false,
     tentacles:[0,1,2,3,4].map((_,i)=>({
       phase:i*1.23,
-      rate:.85+(i%3)*.17
+      rate:.82+(i%3)*.17
     }))
   };
 
@@ -111,7 +113,7 @@ function startOceanGame(){
 function oceanLoop(now){
   if(!game)return;
 
-  const dt=Math.min((now-game.last)/1000,.04);
+  const dt=Math.min((now-game.last)/1000,.035);
   game.last=now;
 
   if(game.running){
@@ -125,48 +127,90 @@ function oceanLoop(now){
 function updateOcean(dt){
   const g=game;
 
+  /*
+   * DOWN:
+   * segment 0 = boat -> first underwater point
+   * segment 1 = first point -> second point
+   */
   if(g.phase==="down"){
-    // Two fixed points under the boat.
-    g.point+=dt*.42;
+    g.progress += dt*.72;
 
-    if(g.point>=2){
-      g.point=2;
-      g.phase="bottom";
+    if(g.progress>=1){
+      g.progress=0;
+      g.segment++;
+
+      if(g.segment>=2){
+        g.segment=1;
+        g.phase="bottom";
+        g.bottomPoint=2;
+      }
     }
   }
 
-  else if(g.phase==="bottom"){
-    // Three bottom points. The player uses only LEFT / RIGHT.
-    // At the third point the bag is taken.
-    if(g.point>=4){
-      takeTreasure();
-      return;
-    }
-  }
-
+  /*
+   * RETURN:
+   * reverse the same route:
+   * bottom -> second underwater point -> first -> boat
+   */
   else if(g.phase==="return"){
-    // Return through the same route.
-    g.point-=dt*.58;
+    g.progress -= dt*.72;
 
-    if(g.point<=0){
-      g.point=0;
-      g.phase="boat";
-      deliverTreasure();
-      return;
+    if(g.progress<=0){
+      g.progress=1;
+      g.segment--;
+
+      if(g.segment<0){
+        g.segment=0;
+        g.phase="boat";
+        deliverTreasure();
+        return;
+      }
     }
+  }
+
+  else if(g.phase==="taking"){
+    // Brief pickup animation, then return.
+    return;
   }
 
   animateTentacles();
   checkTentacleCollision();
 
-  // Every 200 points: replenish up to three divers.
   if(g.score>=g.nextBonus){
-    if(g.divers<3){
-      g.divers++;
-      diversNode.textContent=g.divers;
-    }
+    if(g.divers<3)g.divers++;
     g.nextBonus+=200;
+    diversNode.textContent=g.divers;
   }
+}
+
+function positionOnRoute(){
+  const g=game;
+
+  if(g.phase==="bottom" || g.phase==="taking"){
+    return route[g.bottomPoint];
+  }
+
+  if(g.phase==="down"){
+    const a=g.segment;
+    const b=g.segment+1;
+    const f=g.progress;
+    return {
+      x:route[a].x+(route[b].x-route[a].x)*f,
+      y:route[a].y+(route[b].y-route[a].y)*f
+    };
+  }
+
+  if(g.phase==="return"){
+    const a=g.segment+1;
+    const b=g.segment;
+    const f=g.progress;
+    return {
+      x:route[a].x+(route[b].x-route[a].x)*f,
+      y:route[a].y+(route[b].y-route[a].y)*f
+    };
+  }
+
+  return route[0];
 }
 
 function animateTentacles(){
@@ -177,13 +221,10 @@ function animateTentacles(){
   arms.forEach((arm,i)=>{
     const q=g.tentacles[i];
     const wave=(Math.sin(g.t*q.rate+q.phase)+1)/2;
-
-    // Every tentacle has its own rhythm and target.
     const reach=.30+wave*.70;
-    const angle=[-8,-3,2,7,12][i];
 
     arm.style.transform=
-      `rotate(${angle}deg) scaleX(${.40+reach*.60})`;
+      `rotate(${[-8,-3,2,7,12][i]}deg) scaleX(${.40+reach*.60})`;
 
     arm.classList.toggle("opening",wave>.72);
     dots[i].classList.toggle("hit",wave>.88);
@@ -192,9 +233,9 @@ function animateTentacles(){
 
 function checkTentacleCollision(){
   const g=game;
-  if(!g || !(g.phase==="down"||g.phase==="bottom"||g.phase==="return")) return;
+  if(!g || g.phase==="boat" || g.phase==="taking")return;
 
-  const p=currentPosition();
+  const p=positionOnRoute();
 
   for(let i=0;i<5;i++){
     const q=g.tentacles[i];
@@ -202,40 +243,34 @@ function checkTentacleCollision(){
     const reach=.30+wave*.70;
     const target=targets[i];
 
-    // The tip must be extended and close to the diver's position.
-    if(reach>.76 && Math.hypot(p.x-target.x,p.y-target.y)<8){
+    /*
+     * Danger is checked only when a tentacle is actually extended
+     * toward its own target. The diver can therefore weave between
+     * the five moving arms.
+     */
+    if(reach>.80 && Math.hypot(p.x-target.x,p.y-target.y)<7.5){
       loseDiver();
       return;
     }
   }
 }
 
-function currentPosition(){
-  const p=game.point;
-  const a=Math.max(0,Math.min(4,Math.floor(p)));
-  const b=Math.max(0,Math.min(4,Math.ceil(p)));
-  const f=p-a;
-
-  return {
-    x:route[a].x+(route[b].x-route[a].x)*f,
-    y:route[a].y+(route[b].y-route[a].y)*f
-  };
-}
-
 function move(delta){
-  if(!game || !game.running) return;
+  if(!game || !game.running)return;
 
   if(game.phase==="down" || game.phase==="return"){
-    // While travelling vertically, the two keys let the diver
-    // weave around the tentacles.
+    /*
+     * Only two controls: left/right. They shift the diver's
+     * horizontal corridor while his vertical movement continues
+     * automatically.
+     */
     game.dodge=Math.max(-2,Math.min(2,game.dodge+delta));
   }
 
   else if(game.phase==="bottom"){
-    // Three points on the seabed: P3 -> P4 -> P5.
-    game.point=Math.max(2,Math.min(4,game.point+delta));
+    game.bottomPoint=Math.max(2,Math.min(4,game.bottomPoint+delta));
 
-    if(game.point===4){
+    if(game.bottomPoint===4){
       takeTreasure();
     }
   }
@@ -244,11 +279,10 @@ function move(delta){
 }
 
 function takeTreasure(){
-  if(game.carrying || !game.running) return;
+  if(game.carrying || !game.running)return;
 
   game.carrying=true;
-  game.bagRewarded=true;
-  game.score+=1;
+  game.score++;
   scoreNode.textContent=game.score;
 
   bagSprite.classList.remove("show");
@@ -257,21 +291,21 @@ function takeTreasure(){
 
   createScorePop("+1");
 
-  // Brief pause: the diver visibly takes the bag, then turns back.
   game.phase="taking";
+
   setTimeout(()=>{
     if(!game || !game.running)return;
     game.phase="return";
+    game.segment=1;
+    game.progress=1;
   },650);
 }
 
 function deliverTreasure(){
-  if(!game.carrying) return;
+  if(!game.carrying)return;
 
   game.carrying=false;
 
-  // The original concept: on reaching the boat the bag is shown
-  // three times and three points are awarded.
   rewardFlash.classList.remove("show");
   void rewardFlash.offsetWidth;
   rewardFlash.classList.add("show");
@@ -280,17 +314,18 @@ function deliverTreasure(){
   scoreNode.textContent=game.score;
   createScorePop("+3");
 
-  // The successful diver is back in the boat.
-  // IMPORTANT: he is NOT removed from the three-diver reserve.
-  game.phase="success";
+  /*
+   * Successful diver is back in the boat.
+   * He remains available; another dive starts after the reward.
+   */
+  game.phase="boat";
 
   setTimeout(()=>{
     if(!game || !game.running)return;
-
-    // If there are fewer than three, a 200-point threshold may
-    // replenish one. Otherwise the same three remain available.
     game.phase="down";
-    game.point=0;
+    game.segment=0;
+    game.progress=0;
+    game.bottomPoint=2;
     game.dodge=0;
   },1000);
 }
@@ -305,8 +340,24 @@ function createScorePop(text){
   setTimeout(()=>el.remove(),1050);
 }
 
+function nextDiver(){
+  if(!game || !game.running)return;
+
+  if(game.divers>0){
+    game.divers--;
+    diversNode.textContent=game.divers;
+    game.phase="down";
+    game.segment=0;
+    game.progress=0;
+    game.bottomPoint=2;
+    game.dodge=0;
+  }else{
+    endOcean("Игра окончена","Спрут съел всех трёх водолазов.","🐙");
+  }
+}
+
 function loseDiver(){
-  if(!game || !game.running || game.phase==="boat") return;
+  if(!game || !game.running)return;
 
   game.divers=Math.max(0,game.divers-1);
   diversNode.textContent=game.divers;
@@ -324,7 +375,9 @@ function loseDiver(){
     setTimeout(()=>{
       if(!game || !game.running)return;
       game.phase="down";
-      game.point=0;
+      game.segment=0;
+      game.progress=0;
+      game.bottomPoint=2;
       game.dodge=0;
     },800);
   }
@@ -341,19 +394,18 @@ function endOcean(title,text,icon){
 function renderOcean(){
   if(!game)return;
 
-  const p=currentPosition();
+  const p=positionOnRoute();
   let x=p.x;
 
   if(game.phase==="down" || game.phase==="return"){
     x+=game.dodge*5.5;
   }
 
-  x=Math.max(28,Math.min(65,x));
+  x=Math.max(27,Math.min(66,x));
 
   diverSprite.style.left=x+"%";
   diverSprite.style.top=p.y+"%";
 
-  // Carry the bag visibly after pickup.
   diverSprite.style.filter=game.carrying
     ? "drop-shadow(0 5px 7px rgba(0,0,0,.55)) drop-shadow(7px 5px 2px rgba(255,207,76,.65))"
     : "drop-shadow(0 5px 7px rgba(0,0,0,.55))";
