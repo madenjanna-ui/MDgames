@@ -111,7 +111,7 @@ function frame(now){
 function update(dt){
   // Explicitly advance position every frame.
   if(G.phase==="down"){
-    G.f+=dt*.55;
+    G.f+=dt*.38;
     if(G.f>=1){
       G.f=0;
       G.seg++;
@@ -122,7 +122,7 @@ function update(dt){
       }
     }
   }else if(G.phase==="return"){
-    G.f-=dt*.55;
+    G.f-=dt*.38;
     if(G.f<=0){
       G.f=1;
       G.seg--;
@@ -184,6 +184,7 @@ function draw(){
 
   diver.style.left=x+"%";
   diver.style.top=p.y+"%";
+  diver.classList.toggle("carrying", !!G.carrying);
 
   // Add a tiny visible swimming bob so movement is unmistakable.
   diver.style.marginTop=(Math.sin(G.last/1000*8)*3)+"px";

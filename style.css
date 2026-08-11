@@ -423,3 +423,58 @@ button { font: inherit; }
 
 .diver-sprite{will-change:left,top,margin-top;transition:none!important;z-index:20!important}
 .tentacle-arm{will-change:transform;transition:none!important}
+
+/* v9 — clearly visible animated diver, independent from background artwork */
+.diver-sprite{
+  position:absolute!important;
+  width:58px!important;
+  height:88px!important;
+  transform:translate(-50%,-50%)!important;
+  background:none!important;
+  opacity:1!important;
+  z-index:30!important;
+  filter:drop-shadow(0 5px 5px rgba(0,0,0,.7))!important;
+  transition:none!important;
+  margin-top:0;
+  pointer-events:none;
+}
+.diver-helmet{
+  position:absolute;left:9px;top:2px;width:40px;height:36px;
+  border-radius:50%;background:#dbe8e8;
+  border:3px solid #35474c;box-sizing:border-box;
+}
+.diver-helmet i{
+  position:absolute;left:7px;top:8px;width:22px;height:15px;
+  border-radius:7px;background:#18313b;border:2px solid #7fc7d1;
+}
+.diver-body{
+  position:absolute;left:17px;top:34px;width:25px;height:31px;
+  border-radius:8px;background:#d39a43;border:3px solid #3c3430;
+}
+.diver-tank{
+  position:absolute;left:39px;top:35px;width:10px;height:31px;
+  border-radius:6px;background:#bfc9c8;border:2px solid #3b4b4d;
+}
+.diver-arm{
+  position:absolute;width:24px;height:6px;top:40px;
+  border-radius:5px;background:#d5a05a;border:2px solid #44352f;
+}
+.arm-a{left:0;transform:rotate(28deg)}
+.arm-b{left:36px;transform:rotate(-25deg)}
+.diver-leg{
+  position:absolute;width:8px;height:25px;top:61px;
+  border-radius:6px;background:#a97939;border:2px solid #3f302b;
+}
+.leg-a{left:18px;transform:rotate(8deg)}
+.leg-b{left:33px;transform:rotate(-8deg)}
+.diver-bag{
+  position:absolute;left:43px;top:58px;font-size:18px;
+  display:none;
+}
+.diver-sprite.carrying .diver-bag{display:block}
+.diver-sprite.hit-flash{animation:diverHit .12s linear 5!important}
+@keyframes diverHit{50%{opacity:.15;transform:translate(-50%,-50%) scale(1.15)!important}}
+
+.ocean-board{overflow:hidden}
+.scene-img{z-index:0}
+.route-layer{z-index:20}
