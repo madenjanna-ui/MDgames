@@ -347,3 +347,15 @@ button { font: inherit; }
 .hud-mini{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;background:rgba(2,13,18,.78);border:1px solid rgba(100,220,240,.25);font-size:9px}
 .hud-mini span{color:var(--muted);letter-spacing:.08em}
 .hud-mini b{color:var(--accent);font-size:16px}
+
+.tentacle-arm{position:absolute;right:14.5%;height:18px;transform-origin:right center;z-index:3;pointer-events:none}
+.tentacle-arm::before{content:"";position:absolute;right:0;top:50%;width:100%;height:100%;transform:translateY(-50%);border-radius:999px 16px 16px 999px;background:linear-gradient(90deg,#2a102e,#623151 35%,#8d4260 78%,#b86a70);box-shadow:inset 0 2px 2px rgba(255,255,255,.12),0 3px 6px rgba(0,0,0,.35)}
+.tentacle-arm::after{content:"";position:absolute;right:-2px;top:50%;width:14px;height:14px;transform:translateY(-50%);border-radius:50%;background:#f06a55;box-shadow:0 0 9px rgba(255,83,53,.9)}
+.tentacle-arm .suction{position:absolute;left:25%;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:#d88b92}
+.tentacle-arm.t1{top:31%;width:39%}.tentacle-arm.t2{top:40%;width:46%}.tentacle-arm.t3{top:49%;width:53%}.tentacle-arm.t4{top:58%;width:46%}.tentacle-arm.t5{top:67%;width:39%}
+.tentacle-arm.opening::before{animation:reachTentacle .65s ease-in-out alternate infinite}
+@keyframes reachTentacle{from{transform:translateY(-50%) scaleX(.55)}to{transform:translateY(-50%) scaleX(1)}}
+.danger-dot{position:absolute;width:20px;height:20px;border-radius:50%;border:2px solid rgba(132,232,255,.65);background:rgba(8,52,72,.55);box-shadow:0 0 12px rgba(78,211,244,.35);transform:translate(-50%,-50%);z-index:2}
+.danger-dot.hit{border-color:#ff6752;box-shadow:0 0 15px rgba(255,79,48,.75)}
+.diver-sprite.hit-flash{animation:hitFlash .12s linear 4}
+@keyframes hitFlash{50%{opacity:.15;filter:brightness(2)}}

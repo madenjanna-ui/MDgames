@@ -30,234 +30,103 @@ window.addEventListener("load", () => {
 
 
 
-/* ===== Тайны океана v4 — маршрут из 5 точек =====
-   Две точки вниз от лодки + три точки по дну к кладу.
-   Управление только ◀ / ▶. */
+
+/* ===== Тайны океана v5 — пять щупалец, пять точек опасности ===== */
 const diverSprite=document.getElementById("diverSprite");
 const dangerLayer=document.getElementById("dangerLayer");
-const leftBtn=document.getElementById("left");
-const rightBtn=document.getElementById("right");
-const scoreNode=document.getElementById("score");
-const diversNode=document.getElementById("divers");
-const over=document.getElementById("over");
-const overTitle=document.getElementById("overTitle");
-const overText=document.getElementById("overText");
-const restart=document.getElementById("restart");
+const leftBtn=document.getElementById("left"),rightBtn=document.getElementById("right");
+const scoreNode=document.getElementById("score"),diversNode=document.getElementById("divers");
+const over=document.getElementById("over"),overTitle=document.getElementById("overTitle"),overText=document.getElementById("overText"),restart=document.getElementById("restart");
 
-let oceanGame=null;
+const route=[{x:29.8,y:34.5},{x:29.8,y:54.5},{x:38,y:78},{x:49.5,y:78},{x:61,y:78}];
+const targets=[{x:40,y:31},{x:50,y:40},{x:60,y:49},{x:50,y:58},{x:40,y:67}];
+let game=null;
 
-/* P1, P2 — вертикальный спуск.
-   P3, P4, P5 — три точки по дну до мешка. */
-const route=[
-  {x:29.8,y:34.5},
-  {x:29.8,y:54.5},
-  {x:38.0,y:78.0},
-  {x:49.5,y:78.0},
-  {x:61.0,y:78.0}
-];
-
-function makeTentacles(){
+function buildDanger(){
   dangerLayer.innerHTML="";
-  for(let i=0;i<5;i++){
-    const el=document.createElement("div");
-    el.className="danger-tentacle t"+(i+1);
-    el.dataset.index=i;
-    dangerLayer.appendChild(el);
-  }
+  targets.forEach((p,i)=>{
+    const arm=document.createElement("div");
+    arm.className=`tentacle-arm t${i+1}`;
+    const suction=document.createElement("span"); suction.className="suction"; arm.appendChild(suction);
+    dangerLayer.appendChild(arm);
+    const dot=document.createElement("div"); dot.className="danger-dot";
+    dot.style.left=p.x+"%";dot.style.top=p.y+"%";dangerLayer.appendChild(dot);
+  });
 }
-makeTentacles();
+buildDanger();
 
 function startOceanGame(){
-  oceanGame={
-    running:true,
-    phase:"down",
-    point:0,
-    score:0,
-    divers:3,
-    nextBonus:200,
-    t:0,
-    last:performance.now(),
-    tentacles:[0,1,2,3,4].map((_,i)=>({phase:i*1.31,rate:.9+(i%2)*.18}))
-  };
-  scoreNode.textContent="0";
-  diversNode.textContent="3";
-  over.classList.add("is-hidden");
-  renderOcean();
-  requestAnimationFrame(oceanLoop);
+  game={running:true,phase:"down",point:0,dodge:0,score:0,divers:3,nextBonus:200,t:0,last:performance.now(),
+    tentacles:[0,1,2,3,4].map((_,i)=>({phase:i*1.23,rate:.85+(i%3)*.17}))};
+  scoreNode.textContent="0";diversNode.textContent="3";over.classList.add("is-hidden");renderOcean();requestAnimationFrame(oceanLoop);
 }
-
 function oceanLoop(now){
-  if(!oceanGame)return;
-  const dt=Math.min((now-oceanGame.last)/1000,.04);
-  oceanGame.last=now;
-  if(oceanGame.running){
-    oceanGame.t+=dt;
-    updateOcean(dt);
-    renderOcean();
-    requestAnimationFrame(oceanLoop);
-  }
+  if(!game)return;
+  const dt=Math.min((now-game.last)/1000,.04);game.last=now;
+  if(game.running){game.t+=dt;updateOcean(dt);renderOcean();requestAnimationFrame(oceanLoop)}
 }
-
 function updateOcean(dt){
-  const g=oceanGame;
+  const g=game;
+  if(g.phase==="down"){g.point+=dt*.42;if(g.point>=2){g.point=2;g.phase="bottom"}}
+  else if(g.phase==="bottom"){if(g.point>=4){g.score++;scoreNode.textContent=g.score;g.phase="return"}}
+  else if(g.phase==="return"){g.point-=dt*.58;if(g.point<=0){g.point=0;g.score+=3;scoreNode.textContent=g.score;g.phase="boat";setTimeout(nextDiver,550)}}
 
-  if(g.phase==="down"){
-    // The diver automatically passes the two vertical points.
-    g.point+=dt*.42;
-    if(g.point>=2){
-      g.point=2;
-      // At the bottom, the player chooses P3/P4/P5 with the two keys.
-      g.phase="bottom";
-    }
-  }else if(g.phase==="bottom"){
-    // Only the two buttons change the bottom point.
-    // Reaching the last point means the diver takes the gold bag.
-    if(g.point>=4){
-      g.score+=1;
-      scoreNode.textContent=g.score;
-      g.phase="return";
-    }
-  }else if(g.phase==="return"){
-    // Return through the same three bottom points, then the two vertical points.
-    g.point-=dt*.58;
-    if(g.point<=0){
-      g.point=0;
-      g.score+=3;
-      scoreNode.textContent=g.score;
-      g.phase="boat";
-      setTimeout(nextDiver,550);
-    }
-  }
-
-  // Five tentacles grow/shrink one after another from the octopus.
-  // Their tips are the danger zone; the active one can reach the route.
-  const progress=g.phase==="down" ? g.point/2 :
-                 g.phase==="bottom" ? (g.point-2)/2 :
-                 g.phase==="return" ? g.point/4 : 0;
-
-  const nodes=document.querySelectorAll(".danger-tentacle");
-  nodes.forEach((el,i)=>{
-    const q=g.tentacles[i];
-    const wave=(Math.sin(g.t*q.rate+q.phase)+1)/2;
-    const reach=.25+wave*.75;
-    el.style.setProperty("--reach",reach);
-    el.style.setProperty("width",(24+reach*65)+"%");
-    el.classList.toggle("active",wave>.65);
+  document.querySelectorAll(".tentacle-arm").forEach((arm,i)=>{
+    const q=g.tentacles[i],wave=(Math.sin(g.t*q.rate+q.phase)+1)/2;
+    const reach=.35+wave*.65;
+    arm.style.transform=`rotate(${[-8,-3,2,7,12][i]}deg) scaleX(${.45+reach*.55})`;
+    arm.classList.toggle("opening",wave>.72);
+    document.querySelectorAll(".danger-dot")[i].classList.toggle("hit",wave>.88);
   });
 
-  // Collision: while moving down, a tentacle can reach the diver's current
-  // horizontal corridor; on the bottom, the last three points are the safe route.
-  if(g.phase==="down" || g.phase==="return"){
+  if(g.phase==="down"||g.phase==="return"||g.phase==="bottom"){
+    const p=currentPosition();
     for(let i=0;i<5;i++){
-      const q=g.tentacles[i];
-      const wave=(Math.sin(g.t*q.rate+q.phase)+1)/2;
-      const reach=.25+wave*.75;
-      if(reach>.84){
-        const dangerBand=.22+i*.105;
-        if(Math.abs(progress-dangerBand)<.055){
-          loseDiver();
-          return;
-        }
-      }
+      const q=g.tentacles[i],wave=(Math.sin(g.t*q.rate+q.phase)+1)/2,reach=.35+wave*.65,target=targets[i];
+      if(Math.hypot(p.x-target.x,p.y-target.y)<8.2&&reach>.72){loseDiver();return}
     }
   }
-
-  if(g.score>=g.nextBonus){
-    if(g.divers<3)g.divers++;
-    g.nextBonus+=200;
-    diversNode.textContent=g.divers;
+  if(g.score>=g.nextBonus){if(g.divers<3)g.divers++;g.nextBonus+=200;diversNode.textContent=g.divers}
+}
+function currentPosition(){
+  const p=game.point,a=Math.max(0,Math.min(4,Math.floor(p))),b=Math.max(0,Math.min(4,Math.ceil(p))),f=p-a;
+  return{x:route[a].x+(route[b].x-route[a].x)*f,y:route[a].y+(route[b].y-route[a].y)*f};
+}
+function move(delta){
+  if(!game||!game.running)return;
+  if(game.phase==="down"||game.phase==="return"){
+    game.dodge=Math.max(-2,Math.min(2,game.dodge+delta));
+  }else if(game.phase==="bottom"){
+    game.point=Math.max(2,Math.min(4,game.point+delta));
+    if(game.point===4){game.score++;scoreNode.textContent=game.score;game.phase="return"}
   }
 }
-
-function moveBottom(delta){
-  const g=oceanGame;
-  if(!g||!g.running||g.phase!=="bottom")return;
-  g.point=Math.max(2,Math.min(4,g.point+delta));
-  if(g.point===4){
-    // One point for picking up the bag.
-    g.score+=1;
-    scoreNode.textContent=g.score;
-    g.phase="return";
-  }
-  renderOcean();
-}
-
-function nextDiver(){
-  const g=oceanGame;
-  if(!g||!g.running)return;
-  if(g.divers>0){
-    g.divers--;
-    diversNode.textContent=g.divers;
-    g.point=0;
-    g.phase="down";
-  }else{
-    endOcean("Игра окончена","Спрут съел всех трёх водолазов.","🐙");
-  }
-}
-
-function loseDiver(){
-  const g=oceanGame;
-  if(!g||!g.running)return;
-  g.divers=Math.max(0,g.divers-1);
-  diversNode.textContent=g.divers;
-  if(g.divers===0){
-    endOcean("Игра окончена","Спрут съел всех трёх водолазов.","🐙");
-  }else{
-    g.phase="boat";
-    setTimeout(nextDiver,700);
-  }
-}
-
-function endOcean(title,text,icon){
-  oceanGame.running=false;
-  overTitle.textContent=title;
-  overText.textContent=text;
-  document.getElementById("overIcon").textContent=icon;
-  over.classList.remove("is-hidden");
-}
-
 function renderOcean(){
-  const g=oceanGame;
-  if(!g)return;
-
-  // Interpolate the five route points for a smooth animated movement.
-  let a=Math.floor(g.point), b=Math.ceil(g.point);
-  if(a===b){a=Math.max(0,Math.min(4,a));b=a}
-  else{a=Math.max(0,Math.min(4,a));b=Math.max(0,Math.min(4,b))}
-  const f=g.point-a;
-  const x=route[a].x+(route[b].x-route[a].x)*f;
-  const y=route[a].y+(route[b].y-route[a].y)*f;
-
-  diverSprite.style.left=x+"%";
-  diverSprite.style.top=y+"%";
-
-  // Directional tilt.
-  const dir=(route[b].x-route[a].x);
-  diverSprite.style.transform=`translate(-50%,-50%) rotate(${dir>0?7:dir<0?-7:0}deg)`;
+  if(!game)return;
+  const p=currentPosition();
+  let x=p.x;
+  if(game.phase==="down"||game.phase==="return")x+=game.dodge*5.5;
+  x=Math.max(28,Math.min(65,x));
+  diverSprite.style.left=x+"%";diverSprite.style.top=p.y+"%";
 }
-
-function press(btn,delta){
-  btn.addEventListener("pointerdown",e=>{
-    e.preventDefault();
-    moveBottom(delta);
-  });
+function nextDiver(){
+  if(!game||!game.running)return;
+  if(game.divers>0){game.divers--;diversNode.textContent=game.divers;game.point=0;game.dodge=0;game.phase="down"}
+  else endOcean("Игра окончена","Спрут съел всех трёх водолазов.","🐙");
 }
-press(leftBtn,-1);
-press(rightBtn,1);
-
-window.addEventListener("keydown",e=>{
-  if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a"){
-    e.preventDefault();moveBottom(-1);
-  }
-  if(e.key==="ArrowRight"||e.key.toLowerCase()==="d"){
-    e.preventDefault();moveBottom(1);
-  }
-});
-
+function loseDiver(){
+  game.divers=Math.max(0,game.divers-1);diversNode.textContent=game.divers;
+  diverSprite.classList.add("hit-flash");setTimeout(()=>diverSprite.classList.remove("hit-flash"),500);
+  if(game.divers===0)endOcean("Игра окончена","Спрут съел всех трёх водолазов.","🐙");
+  else{game.phase="boat";setTimeout(nextDiver,700)}
+}
+function endOcean(title,text,icon){
+  game.running=false;overTitle.textContent=title;overText.textContent=text;
+  document.getElementById("overIcon").textContent=icon;over.classList.remove("is-hidden");
+}
+leftBtn.addEventListener("pointerdown",e=>{e.preventDefault();move(-1)});
+rightBtn.addEventListener("pointerdown",e=>{e.preventDefault();move(1)});
+window.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a"){e.preventDefault();move(-1)}if(e.key==="ArrowRight"||e.key.toLowerCase()==="d"){e.preventDefault();move(1)}});
 restart.addEventListener("click",startOceanGame);
-
-const oldShowOcean=showOcean;
-showOcean=()=>{
-  oldShowOcean();
-  setTimeout(startOceanGame,80);
-};
+const oldShowOcean=showOcean;showOcean=()=>{oldShowOcean();setTimeout(startOceanGame,80)};
+window.addEventListener("resize",()=>{if(game)renderOcean()});
