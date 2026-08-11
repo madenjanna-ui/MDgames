@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#041522">
+  <title>MD Games</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="intro" class="intro" aria-label="MD Games">
+    <img src="assets/md-games-intro.gif" alt="MD Games">
+  </div>
+
+  <main id="app" class="app is-hidden">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">MD</span>
+        <span class="brand-name">GAMES</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">MD GAMES</p>
+      <h1>Игры, в которые<br>хочется погрузиться</h1>
+      <p class="subtitle">Выбирай игру и отправляйся в приключение.</p>
+    </section>
+
+    <section class="games">
+      <article class="game-card ocean">
+        <div class="card-glow"></div>
+        <div class="card-content">
+          <span class="game-icon">🌊</span>
+          <p class="game-label">ИГРА №1</p>
+          <h2>Тайны океана</h2>
+          <p>Исследуй глубины, находи тайны и открывай неизведанное.</p>
+          <button id="playOcean" class="play-button" type="button">
+            <span>Играть</span>
+            <span class="arrow">→</span>
+          </button>
+        </div>
+      </article>
+
+      <article class="game-card coming-soon" aria-disabled="true">
+        <div class="card-content">
+          <span class="game-icon">✦</span>
+          <p class="game-label">СКОРО</p>
+          <h2>Новые игры</h2>
+          <p>Здесь появятся следующие игры MD Games.</p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <section id="oceanScreen" class="game-screen is-hidden">
+    <button id="backButton" class="back-button" type="button" aria-label="Вернуться в меню">
+      ← <span>MD Games</span>
+    </button>
+    <div class="game-placeholder">
+      <span class="placeholder-icon">🌊</span>
+      <p class="eyebrow">MD GAMES</p>
+      <h1>Тайны океана</h1>
+      <p>Игровой модуль готов к подключению.</p>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
