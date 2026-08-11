@@ -17,7 +17,11 @@ function showOcean() {
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
-playOcean.addEventListener("click", showOcean);
+function openOceanGame(){
+  showOcean();
+  setTimeout(startGame, 120);
+}
+playOcean.addEventListener("click", openOceanGame);
 backButton.addEventListener("click", showMenu);
 
 window.addEventListener("load", () => {
@@ -247,10 +251,6 @@ window.addEventListener("keydown",e=>{
 });
 restartBtn.addEventListener("click",startGame);
 
-const previousShowOcean=showOcean;
-showOcean=function(){
-  previousShowOcean();
-  setTimeout(startGame,100);
-};
+
 
 window.addEventListener("resize",()=>{if(G&&G.run)draw()});
