@@ -17,7 +17,7 @@ function showOcean() {
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
-playOcean.addEventListener("click", showOcean);
+
 backButton.addEventListener("click", showMenu);
 
 window.addEventListener("load", () => {
@@ -247,7 +247,24 @@ window.addEventListener("keyup",e=>{
   if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")G.right=false;
 });
 
-RS.addEventListener("click",start);
-const oldShowOcean=showOcean;
-showOcean=()=>{oldShowOcean();setTimeout(start,60)};
-window.addEventListener("resize",()=>{if(G){fit();draw(performance.now()/1000)}});
+RS.addEventListener("click", start);
+
+playOcean.addEventListener("click", () => {
+  app.classList.add("is-hidden");
+  oceanScreen.classList.remove("is-hidden");
+  window.scrollTo({top:0, behavior:"instant"});
+  setTimeout(start, 80);
+});
+
+backButton.addEventListener("click", () => {
+  if (G) G.run = false;
+  oceanScreen.classList.add("is-hidden");
+  app.classList.remove("is-hidden");
+});
+
+window.addEventListener("resize",()=>{
+  if(G){
+    fit();
+    draw(performance.now()/1000);
+  }
+});

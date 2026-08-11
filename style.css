@@ -296,3 +296,13 @@ button { font: inherit; }
 .over.is-hidden{display:none}
 .over>div{font-size:52px}.over h2{margin:5px 0;font-size:30px}.over p{color:var(--muted)}
 @media(min-width:650px){.ocean-board{aspect-ratio:16/10}}
+
+.ocean-board{box-shadow:inset 0 0 90px rgba(0,190,255,.16),0 10px 35px rgba(0,0,0,.25)}
+.ocean-title{margin-bottom:10px}
+@media(max-width:650px) and (orientation:landscape){
+  .ocean-wrap{margin-top:4px}
+  .ocean-title h1{font-size:28px}
+  .ocean-title .eyebrow{margin-bottom:4px}
+  .game-tip{margin-top:7px}
+  .control-button{min-height:48px}
+}
