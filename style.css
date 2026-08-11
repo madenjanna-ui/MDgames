@@ -420,3 +420,6 @@ button { font: inherit; }
 }
 
 .scene-img{z-index:0}.route-layer{z-index:4}.diver-sprite{z-index:10;}
+
+.diver-sprite{will-change:left,top,margin-top;transition:none!important;z-index:20!important}
+.tentacle-arm{will-change:transform;transition:none!important}
